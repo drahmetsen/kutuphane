@@ -14,6 +14,17 @@ const LANGS = [["tr", "Türkçe"], ["en", "İngilizce"], ["other", "Diğer"]];
 const OWNERS = [["A", "A"], ["H", "H"], ["U", "U"], ["E", "E"], ["Z", "Z"]];
 const WORK_TYPES = [["article", "Makale"], ["story", "Hikâye"], ["other", "Diğer"]];
 
+// ===== KATEGORİLER — buradan düzenle =======================================
+// Bunlar öneridir (combobox): listeden seçilebilir AMA uymuyorsa yeni bir
+// değer de yazılabilir. Yazılan yeni değerler filtrelere otomatik düşer.
+// Bir alanı tamamen kilitlemek (yeni yazıma izin vermemek) istersen ilgili
+// alanın type'ını "combo" yerine "select" yap.
+const BOOK_TYPES = ["Kitap", "Roman", "Öykü", "Şiir", "Deneme", "Ders Kitabı", "Biyografi", "Anı", "Dergi", "Tez", "Diğer"];
+const FIELDS     = ["Tıp", "Edebiyat", "Tarih", "Felsefe", "Psikoloji", "Sosyoloji", "Din", "Sanat", "Bilim", "Politika", "Çocuk", "Referans", "Diğer"];
+const ORIG_LANGS = ["Türkçe", "İngilizce", "Almanca", "Fransızca", "Rusça", "İtalyanca", "İspanyolca", "Arapça", "Latince", "Eski Yunanca"];
+// ===========================================================================
+
+
 const TABS = {
   library: {
     table: "library",
@@ -30,6 +41,7 @@ const TABS = {
     ],
     filters: [
       { key: "owner",    label: "Sahip",   options: OWNERS },
+      { key: "type",     label: "Tür",     dynamic: true },
       { key: "language", label: "Dil",     options: LANGS },
       { key: "field",    label: "Alan",    dynamic: true },
     ],
@@ -40,9 +52,9 @@ const TABS = {
       { key: "year",     label: "Yıl",    type: "number" },
       { key: "pages",    label: "Sayfa sayısı", type: "number" },
       { key: "language", label: "Dil (baskı)", type: "select", options: LANGS },
-      { key: "original_language", label: "Orijinal dil", type: "text" },
-      { key: "type",     label: "Tür",    type: "text" },
-      { key: "field",    label: "Alan",   type: "text" },
+      { key: "original_language", label: "Orijinal dil", type: "combo", options: ORIG_LANGS },
+      { key: "type",     label: "Tür",    type: "combo", options: BOOK_TYPES },
+      { key: "field",    label: "Alan",   type: "combo", options: FIELDS },
       { key: "owner",    label: "Sahip",  type: "select", options: OWNERS, required: true },
     ],
   },
@@ -67,7 +79,7 @@ const TABS = {
       { key: "year",         label: "Yıl",       type: "number" },
       { key: "language",     label: "Dil",       type: "select", options: LANGS },
       { key: "type",         label: "Tür",       type: "select", options: WORK_TYPES },
-      { key: "field",        label: "Alan",      type: "text" },
+      { key: "field",        label: "Alan",      type: "combo", options: FIELDS },
       { key: "external_url", label: "Bağlantı (URL)", type: "text", full: true },
     ],
   },
@@ -276,6 +288,15 @@ function renderForm(row = {}) {
       input = el("select");
       input.append(el("option", { value: "", textContent: "—" }));
       for (const [val, lab] of f.options) input.append(el("option", { value: val, textContent: lab }));
+    } else if (f.type === "combo") {
+      // text input + datalist: pick from suggestions OR type a new value
+      input = el("input", { type: "text" });
+      input.setAttribute("autocomplete", "off");
+      const listId = `dl-${state.tab}-${f.key}`;
+      let dl = document.getElementById(listId);
+      if (!dl) { dl = el("datalist", { id: listId }); document.body.append(dl); }
+      dl.replaceChildren(...f.options.map((o) => el("option", { value: o })));
+      input.setAttribute("list", listId);
     } else {
       input = el("input", { type: f.type });
     }
